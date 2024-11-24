@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html ng-app="employee">
+    <head>
+        <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.9/angular.min.js"></script>
+        <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.9/angular-animate.js"></script>
+        <script src="indexMongo.js"></script>
+      
+        <style>
+.slide.ng-enter{
+    transform:translateX(-100%);
+    opacity:0;
+    transition:transform 1s ease,opacity 1s ease;
+}
+.slide.ng-enter-active{
+    transform:translateX(0);
+    opacity:1;
+}
+        </style>
+        <!-- <link rel="stylesheet" href="index.css"> -->
+      
+    </head>
+    <body ng-controller="myCtrl">
+        <div ng-if="display" class="slide">
+            <h2>Welcome</h2>
+        </div>
+        <welcome-msg></welcome-msg>
+        <form ng-submit="add()">
+            <label>name</label>
+            <input type="text" ng-model="employee.name"></input>
+            <br></br>
+            <label>age</label>
+            <input type="text" ng-model="employee.age"></input>
+            <br></br>
+            <label>salary</label>
+            <input type="text" ng-model="employee.salary"></input>
+            <br></br>
+            <button type="submit">Submit</button>
+           
+        </form>
+        <br></br>
+        <button ng-click="get()">Get details</button>
+        <br></br>
+        <input type="text" placeholder="type to search" ng-model="search"></input>
+        <select ng-model="option">
+            <option value="name">name</option>
+            <option value="age">age</option>
+            <option value="salary">salary</option>
+        </select>
+        <table ng-if="display">
+            <tr>
+                <th>ID</th>
+                <th>name</th>
+                <th>age</th>
+                <th>salary</th>
+                <th>button</th>
+            </tr>
+        
+        <tr ng-repeat="emp in employees|orderBy:option|filter:search" class="fade" ng-animate="'slide'">
+            <td>{{emp.id||"n/a"}}</td>
+            <td>{{emp.name}}</td>
+            <td>{{emp.age}}</td>
+            <td>{{emp.salary}}</td>
+            <td><button ng-click="remove(emp.name)">remove</button></td>
+            <td><button ng-click="updateAge(emp)">Update ID</button></td>
+
+        </tr>
+    </table>
+    </body>
+
+</html>

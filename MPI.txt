@@ -1,0 +1,394 @@
+MPI
+
+sudo apt update
+sudo apt install mpich
+
+
+mpicc --version
+mpirun --version
+
+mpicc mpi_hello.c -o mpi_hello
+mpirun -np 4 ./mpi_hello
+
+
+hello world
+
+#include <stdio.h>
+#include <mpi.h>
+
+int main(int argc, char* argv[]) {
+    MPI_Init(&argc, &argv);  // Initialize MPI
+    
+    int world_rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);  // Get the rank of the process
+
+    int world_size;
+    MPI_Comm_size(MPI_COMM_WORLD, &world_size);  // Get the number of processes
+
+    printf("Hello from process %d of %d\n", world_rank, world_size);
+
+    MPI_Finalize();  // Finalize MPI
+    return 0;
+}
+
+
+
+parallel reduction-sum of numbers
+
+
+#include <stdio.h>
+#include <mpi.h>
+
+int main(int argc, char* argv[]) {
+    MPI_Init(&argc, &argv);  // Initialize MPI environment
+
+    int world_rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);  // Get the rank of this process
+    
+    int world_size;
+    MPI_Comm_size(MPI_COMM_WORLD, &world_size);  // Get the total number of processes
+    
+    int local_sum = world_rank + 1;  // Each process adds its rank + 1
+    int global_sum = 0;
+
+    // Perform the reduction (sum of all local sums)
+    MPI_Reduce(&local_sum, &global_sum, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+    
+    if (world_rank == 0) {
+        printf("The total sum is %d\n", global_sum);
+    }
+
+    MPI_Finalize();  // Finalize MPI environment
+    return 0;
+}
+
+
+
+sender-receiver
+
+#include <stdio.h>
+#include <mpi.h>
+
+// Sender function
+void sender() {
+    int data = 100;  // Data to send
+    int TAG = 0;  // Message tag to identify the message
+
+    // Sending the data to process 1 (receiver)
+    MPI_Send(&data, 1, MPI_INT, 1, TAG, MPI_COMM_WORLD);
+    printf("Sender (Process 0) sent data: %d\n", data);
+}
+
+// Receiver function
+void receiver() {
+    int received_data;
+    int TAG = 0;  // Message tag to identify the message
+
+    // Receiving the data from process 0 (sender)
+    MPI_Recv(&received_data, 1, MPI_INT, 0, TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    printf("Receiver (Process 1) received data: %d\n", received_data);
+}
+
+int main(int argc, char* argv[]) {
+    MPI_Init(&argc, &argv);  // Initialize MPI environment
+
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);  // Get the rank of the current process
+
+    if (rank == 0) {
+        sender();  // Call sender function if process 0
+    } else if (rank == 1) {
+        receiver();  // Call receiver function if process 1
+    }
+
+    MPI_Finalize();  // Finalize MPI environment
+    return 0;
+}
+
+
+
+greatest number
+
+#include <stdio.h>
+#include <mpi.h>
+
+int main(int argc, char* argv[]) {
+    int rank, size, n;
+    int local_max, global_max;
+
+    MPI_Init(&argc, &argv);  // Initialize MPI environment
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);  // Get the rank of the current process
+    MPI_Comm_size(MPI_COMM_WORLD, &size);  // Get the total number of processes
+
+    // Root process (rank 0) asks for array size and inputs array elements
+    if (rank == 0) {
+        printf("Enter the number of elements in the array: ");
+        scanf("%d", &n);
+    }
+
+    // Broadcast the size of the array to all processes
+    MPI_Bcast(&n, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
+    int arr[n];
+
+    // Root process inputs the array elements
+    if (rank == 0) {
+        printf("Enter the elements of the array:\n");
+        for (int i = 0; i < n; i++) {
+            scanf("%d", &arr[i]);
+        }
+    }
+
+    // Broadcast the array to all processes
+    MPI_Bcast(arr, n, MPI_INT, 0, MPI_COMM_WORLD);
+
+    // Each process finds the maximum value in its portion of the array
+    int chunk_size = n / size;  // Calculate chunk size for each process
+    int start_index = rank * chunk_size;
+    int end_index = (rank == size - 1) ? n : (rank + 1) * chunk_size;  // Handle last chunk
+
+    // Find the local maximum in the assigned chunk
+    local_max = arr[start_index];
+    for (int i = start_index + 1; i < end_index; i++) {
+        if (arr[i] > local_max) {
+            local_max = arr[i];
+        }
+    }
+
+    // Use MPI_Reduce to find the global maximum from all processes
+    MPI_Reduce(&local_max, &global_max, 1, MPI_INT, MPI_MAX, 0, MPI_COMM_WORLD);
+
+    // Root process prints the greatest number
+    if (rank == 0) {
+        printf("The greatest number in the array is: %d\n", global_max);
+    }
+
+    MPI_Finalize();  // Finalize MPI environment
+    return 0;
+}
+
+
+
+
+#include <mpi.h>
+#include <stdio.h>
+
+int main(int argc, char** argv) {
+    MPI_Init(&argc, &argv);  // Initialize the MPI environment
+
+    int world_size;
+    MPI_Comm_size(MPI_COMM_WORLD, &world_size);  // Get the number of processes
+
+    int world_rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);  // Get the rank of the process
+
+    printf("Hello world from process %d of %d\n", world_rank, world_size);
+
+    MPI_Finalize();  // Finalize the MPI environment
+    return 0;
+}
+
+
+
+
+#include <mpi.h>
+#include <stdio.h>
+
+int main(int argc, char** argv) {
+    MPI_Init(&argc, &argv);
+
+    int world_rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+
+    int number;
+    if (world_rank == 0) {
+        // Process 0 sends the number to process 1
+        number = 42;
+        MPI_Send(&number, 1, MPI_INT, 1, 0, MPI_COMM_WORLD);
+        printf("Process 0 sent number %d to process 1\n", number);
+    } else if (world_rank == 1) {
+        // Process 1 receives the number from process 0
+        MPI_Recv(&number, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        printf("Process 1 received number %d from process 0\n", number);
+    }
+
+    MPI_Finalize();
+    return 0;
+}
+
+
+
+
+#include <mpi.h>
+#include <stdio.h>
+
+int main(int argc, char** argv) {
+    MPI_Init(&argc, &argv);
+
+    int world_rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+
+    int number;
+    if (world_rank == 0) {
+        number = 100;  // Root process sets the number
+        printf("Process 0 broadcasting number %d\n", number);
+    }
+
+    // Broadcast the number from process 0 to all processes
+    MPI_Bcast(&number, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
+    printf("Process %d received number %d\n", world_rank, number);
+
+    MPI_Finalize();
+    return 0;
+}
+
+
+
+
+
+#include <mpi.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+int main(int argc, char** argv) {
+    int rank, size;
+    int local_max, global_max;
+    int array[] = {5, 12, 7, 21, 9, 19, 3, 8}; // Example array
+    int n = sizeof(array) / sizeof(array[0]); // Size of the array
+    int local_size;
+
+    // Initialize MPI environment
+    MPI_Init(&argc, &argv);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+
+    // Divide the array among processes
+    local_size = n / size; // Assumes the array size is divisible by number of processes
+    int local_array[local_size];
+
+    MPI_Scatter(array, local_size, MPI_INT, local_array, local_size, MPI_INT, 0, MPI_COMM_WORLD);
+
+    // Find the local maximum
+    local_max = local_array[0];
+    for (int i = 1; i < local_size; i++) {
+        if (local_array[i] > local_max) {
+            local_max = local_array[i];
+        }
+    }
+
+    // Use MPI_Reduce to find the global maximum
+    MPI_Reduce(&local_max, &global_max, 1, MPI_INT, MPI_MAX, 0, MPI_COMM_WORLD);
+
+    // The root process (rank 0) prints the global maximum
+    if (rank == 0) {
+        printf("The largest element in the array is: %d\n", global_max);
+    }
+
+    // Finalize MPI environment
+    MPI_Finalize();
+
+    return 0;
+}
+
+[3:48 pm, 24/11/2024] Nirutthyu: #include <mpi.h>
+#include <stdio.h>
+#include <math.h>
+
+int main(int argc, char** argv) {
+    int rank, size, n, i;
+    double pi = 0.0, local_sum = 0.0, term, global_pi;
+
+    // Initialize MPI environment
+    MPI_Init(&argc, &argv);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+
+    // Input number of terms (only rank 0 takes input)
+    if (rank == 0) {
+        printf("Enter the number of terms (n): ");
+        scanf("%d", &n);
+    }
+
+    // Broadcast the value of n to all processes
+    MPI_Bcast(&n, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
+    // Compute local sum for each process
+    for (i = rank; i < n; i += size) {
+        term = 4.0 / (2 * i + 1);
+        if (i % 2 == 0)
+            local_sum += term; // Add if i is even
+        else
+            local_sum -= term; // Subtract if i is odd
+    }
+
+    // Reduce all local sums to calculate global pi
+    MPI_Reduce(&local_sum, &global_pi, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+
+    // Output the result (only rank 0 prints the final value of pi)
+    if (rank == 0) {
+        printf("Approximate value of pi: %.15f\n", global_pi);
+    }
+
+    // Finalize MPI environment
+    MPI_Finalize();
+    return 0;
+}
+[4:10 pm, 24/11/2024] Nirutthyu: #include <stdio.h>
+#include <omp.h>
+
+void fibonacci(int n) {
+    long long fib[n];
+
+    // Set the first two terms of the Fibonacci sequence
+    fib[0] = 0;
+    if (n > 1) {
+        fib[1] = 1;
+    }
+
+    // Parallelized loop to fill the Fibonacci array after the first two terms
+    #pragma omp parallel for
+    for (int i = 2; i < n; i++) {
+        // Each term is calculated based on previous two terms already computed
+        fib[i] = fib[i - 1] + fib[i - 2];
+    }
+
+    // Print the Fibonacci sequence
+    printf("Fibonacci Sequence up to %d terms:\n", n);
+    for (int i = 0; i < n; i++) {
+        printf("%lld ", fib[i]);
+    }
+    printf("\n");
+}
+
+int main() {
+    int n;
+
+    printf("Enter the number of terms for Fibonacci sequence: ");
+    scanf("%d", &n);…
+[4:13 pm, 24/11/2024] Nirutthyu: #include <stdio.h>
+#include <omp.h>
+
+int main() {
+    int n, i;
+    double pi = 0.0, term;
+
+    // Input number of terms
+    printf("Enter the number of terms (n): ");
+    scanf("%d", &n);
+
+    // Parallel computation using OpenMP
+    #pragma omp parallel for private(term) reduction(+:pi)
+    for (i = 0; i < n; i++) {
+        term = 4.0 / (2 * i + 1);
+        if (i % 2 == 0)
+            pi += term; // Add if i is even
+        else
+            pi -= term; // Subtract if i is odd
+    }
+
+    // Output the result
+    printf("Approximate value of pi: %.15f\n", pi);
+
+    return 0;
+}
