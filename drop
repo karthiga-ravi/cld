@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <title>Dropbox File Management</title>
+    <script src="https://unpkg.com/dropbox/dist/Dropbox-sdk.min.js"></script>
+</head>
+<body>
+    <h1>DropBox File Management</h1>
+    <h3>File Upload</h3>
+    <input type="file" id="file-Input">
+    <button id="Upload-btn">Upload file</button>
+    <h3>File Download</h3>
+    <input type="text" id="file-Download">
+    <button id="Download-btn">Download file</button>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const dbx = new Dropbox.Dropbox({ accessToken: });
+            // Upload file
+            document.getElementById('Upload-btn').addEventListener('click', async () => {
+                const file = document.getElementById('file-Input').files[0];
+                if (file) {
+                    try {
+                        const response = await dbx.filesUpload({ path: '/Booklend/' + file.name, contents: file });
+                        alert('File uploaded successfully!');
+                    } catch (error) {
+                        alert('Error uploading file: ' + (error.error ? JSON.stringify(error.error) : error.message));
+                    }d
+                }
+            });
+            // Download file
+            document.getElementById('Download-btn').addEventListener('click', async () => {
+                const filename = document.getElementById('file-Download').value;
+                if (!filename) {
+                    alert('Error: No file name provided for download.');
+                    return;
+                }
+                const fpath = '/Booklend/' + filename;  // Use the correct filename
+                try {
+                    const resp = await dbx.filesDownload({ path: fpath });
+                    const blob = resp.result.fileBlob;
+                    const downloadUrl = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = downloadUrl;
+                    a.download = filename;  // Ensure the right variable is used here
+                    a.click();
+                    URL.revokeObjectURL(downloadUrl);  // Clean up URL
+                } catch (error) {
+                    alert('Error downloading file: ' + (error.error ? JSON.stringify(error.error) : error.message));
+                }
+            });
+        });
+    </script>
+</body>
+</html>
